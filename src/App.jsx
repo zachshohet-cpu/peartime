@@ -3,99 +3,258 @@ import { supabase } from './supabase'
 import './index.css'
 
 function App() {
-  const [members, setMembers] = useState([])
-  const [loadingMembers, setLoadingMembers] = useState(true)
-  
-  const [trades, setTrades] = useState([])
+  // Auth state
   const [currentUser, setCurrentUser] = useState(null)
-  
+  const [page, setPage] = useState('start') // start, login, signup, home, pending
+
+  // Data state
+  const [members, setMembers] = useState([])
+  const [trades, setTrades] = useState([])
+  const [loadingMembers, setLoadingMembers] = useState(true)
+
+  // Form state
+  const [loginName, setLoginName] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [signupName, setSignupName] = useState('')
+  const [signupPassword, setSignupPassword] = useState('')
   const [offering, setOffering] = useState('')
   const [wanting, setWanting] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
+  // Load data when user reaches the home screen
   useEffect(() => {
-    async function loadData() {
-      // 1. Load Members
-      const { data: mData } = await supabase.from('members').select('*').order('id')
-      if (mData) setMembers(mData)
-      setLoadingMembers(false)
-      
-      // 2. Load Trades
-      const { data: tData } = await supabase.from('trades').select('*').order('created_at', { ascending: false })
-      if (tData) setTrades(tData)
+    if (page === 'home') {
+      loadData()
     }
-    loadData()
-  }, [])
+  }, [page])
 
-  const handleProfileSelect = (e) => {
-    if (e.target.value === "") {
-        setCurrentUser(null)
-        return
-    }
-    const member = members.find(m => String(m.id) === e.target.value)
-    setCurrentUser(member)
+  async function loadData() {
+    const { data: mData } = await supabase.from('members').select('*').eq('approved', true).order('id')
+    if (mData) setMembers(mData)
+    setLoadingMembers(false)
+
+    const { data: tData } = await supabase.from('trades').select('*').order('created_at', { ascending: false })
+    if (tData) setTrades(tData)
   }
 
+  // ====== LOGIN ======
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('name', loginName)
+      .eq('password', loginPassword)
+      .single()
+
+    if (error || !data) {
+      setErrorMsg('Wrong name or password. Try again!')
+      return
+    }
+    if (!data.approved) {
+      setPage('pending')
+      return
+    }
+    setCurrentUser(data)
+    setPage('home')
+  }
+
+  // ====== SIGNUP ======
+  const handleSignup = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    if (!signupName || !signupPassword) {
+      setErrorMsg('Please fill in both your name and a password!')
+      return
+    }
+    if (signupPassword.length < 4) {
+      setErrorMsg('Password must be at least 4 characters!')
+      return
+    }
+
+    // Check if name already exists
+    const { data: existing } = await supabase.from('members').select('id').eq('name', signupName)
+    if (existing && existing.length > 0) {
+      setErrorMsg('That name is already taken! Try a different one.')
+      return
+    }
+
+    // Create the member (unapproved)
+    const { data: newMember, error: memberError } = await supabase
+      .from('members')
+      .insert([{ name: signupName, password: signupPassword, approved: false, rank: 'Level 0', tokens: 0 }])
+      .select()
+
+    if (memberError) {
+      setErrorMsg('Something went wrong. Try again!')
+      return
+    }
+
+    // Create a signup request in the trades table
+    await supabase.from('trades').insert([{
+      requester_name: signupName,
+      offering: 'New member signup request',
+      wanting: 'Account approval',
+      status: 'pending',
+      request_type: 'signup'
+    }])
+
+    setPage('pending')
+  }
+
+  // ====== TRADE ======
   const handleCreateTrade = async (e) => {
     e.preventDefault()
-    if (!currentUser) return alert('Please set your profile at the top first!')
-    if (!offering || !wanting) return alert('Please enter both offering and wanting fields.')
-    
-    const newTrade = {
+    if (!offering || !wanting) return alert('Please fill in both fields.')
+
+    const { data, error } = await supabase.from('trades').insert([{
       requester_name: currentUser.name,
       offering,
-      wanting
-    }
-    
-    const { data, error } = await supabase.from('trades').insert([newTrade]).select()
+      wanting,
+      request_type: 'trade'
+    }]).select()
+
     if (data && data.length > 0) {
-       setTrades([data[0], ...trades])
-       setOffering('')
-       setWanting('')
-    } else {
-        alert("Wait, failed to create trade! Did you accept the warning on Supabase about RLS for the trades table? You must run it without RLS!")
+      setTrades([data[0], ...trades])
+      setOffering('')
+      setWanting('')
     }
   }
 
-  const handleUpdateStatus = async (id, newStatus) => {
-    const { error } = await supabase.from('trades').update({ status: newStatus }).eq('id', id)
-    if (!error) {
-       setTrades(trades.map(t => t.id === id ? { ...t, status: newStatus } : t))
+  // ====== APPROVE / DECLINE ======
+  const handleUpdateStatus = async (trade, newStatus) => {
+    await supabase.from('trades').update({ status: newStatus }).eq('id', trade.id)
+
+    // If it's a signup request being accepted, approve the member
+    if (trade.request_type === 'signup' && newStatus === 'accepted') {
+      await supabase.from('members').update({ approved: true }).eq('name', trade.requester_name)
     }
+
+    setTrades(trades.map(t => t.id === trade.id ? { ...t, status: newStatus } : t))
   }
 
+  const handleLogout = () => {
+    setCurrentUser(null)
+    setPage('start')
+    setLoginName('')
+    setLoginPassword('')
+    setSignupName('')
+    setSignupPassword('')
+    setErrorMsg('')
+  }
+
+  // =============================================
+  // START PAGE
+  // =============================================
+  if (page === 'start') {
+    return (
+      <div className="start-screen">
+        <div className="start-card">
+          <img src="/pear-logo.png" alt="PearTime Logo" className="start-logo" />
+          <h1 className="start-title">PearTime</h1>
+          <p className="start-subtitle">Official VIP Membership & 3D Printing Platform</p>
+          <div className="start-buttons">
+            <button className="btn-primary" onClick={() => { setPage('login'); setErrorMsg('') }}>Log In</button>
+            <button className="btn-secondary" onClick={() => { setPage('signup'); setErrorMsg('') }}>Sign Up</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // =============================================
+  // LOGIN PAGE
+  // =============================================
+  if (page === 'login') {
+    return (
+      <div className="start-screen">
+        <div className="start-card">
+          <img src="/pear-logo.png" alt="PearTime Logo" className="start-logo small" />
+          <h2>Log In</h2>
+          <form className="auth-form" onSubmit={handleLogin}>
+            <input type="text" placeholder="Your full name" value={loginName} onChange={e => setLoginName(e.target.value)} />
+            <input type="password" placeholder="Password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+            {errorMsg && <p className="error-msg">{errorMsg}</p>}
+            <button type="submit" className="btn-primary">Log In</button>
+          </form>
+          <button className="btn-link" onClick={() => { setPage('start'); setErrorMsg('') }}>← Back</button>
+        </div>
+      </div>
+    )
+  }
+
+  // =============================================
+  // SIGNUP PAGE
+  // =============================================
+  if (page === 'signup') {
+    return (
+      <div className="start-screen">
+        <div className="start-card">
+          <img src="/pear-logo.png" alt="PearTime Logo" className="start-logo small" />
+          <h2>Create Your Profile</h2>
+          <form className="auth-form" onSubmit={handleSignup}>
+            <input type="text" placeholder="Your real full name (e.g. John Smith)" value={signupName} onChange={e => setSignupName(e.target.value)} />
+            <input type="password" placeholder="Create a password (4+ characters)" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} />
+            {errorMsg && <p className="error-msg">{errorMsg}</p>}
+            <button type="submit" className="btn-primary">Create Profile</button>
+          </form>
+          <p className="info-text">Your request will be sent to the Founder for approval.</p>
+          <button className="btn-link" onClick={() => { setPage('start'); setErrorMsg('') }}>← Back</button>
+        </div>
+      </div>
+    )
+  }
+
+  // =============================================
+  // PENDING APPROVAL PAGE
+  // =============================================
+  if (page === 'pending') {
+    return (
+      <div className="start-screen">
+        <div className="start-card">
+          <img src="/pear-logo.png" alt="PearTime Logo" className="start-logo small" />
+          <h2>⏳ Waiting for Approval</h2>
+          <p>Your signup request has been sent to the Founder (Zach).</p>
+          <p>Once he accepts, you can log in!</p>
+          <button className="btn-link" onClick={() => setPage('start')}>← Back to Start</button>
+        </div>
+      </div>
+    )
+  }
+
+  // =============================================
+  // HOME SCREEN (after login)
+  // =============================================
   return (
     <div className="container">
       <header className="header">
         <div className="header-top">
-            <h1>🍐 PearTime</h1>
-            <div className="profile-switcher">
-                <label>Login As:</label>
-                <select onChange={handleProfileSelect} defaultValue="">
-                    <option value="">-- Choose Profile --</option>
-                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-                {currentUser && <span className="profile-badge badge-green">Logged in as {currentUser.name}</span>}
-                {currentUser?.name === 'Zach' && <span className="profile-badge badge-gold">👑 Founder Mode Active</span>}
-            </div>
+          <h1>🍐 PearTime</h1>
+          <div className="profile-switcher">
+            <span className="profile-badge badge-green">Logged in as {currentUser.name}</span>
+            {currentUser?.name === 'Zach' && <span className="profile-badge badge-gold">👑 Founder Mode</span>}
+            <button className="btn-logout" onClick={handleLogout}>Log Out</button>
+          </div>
         </div>
         <p className="subtitle">Official VIP Membership & 3D Printing Platform</p>
       </header>
-      
+
       <main className="main-content">
-        
+
         {/* MEMBERS DIRECTORY */}
         <div className="card">
           <h2>Member Directory</h2>
           {loadingMembers ? (
-            <p>Loading members from Supabase...</p>
+            <p>Loading members...</p>
           ) : members.length === 0 ? (
-            <p>No members yet (or database is empty).</p>
+            <p>No members yet.</p>
           ) : (
             <ul className="member-list">
               {members.map(member => (
                 <li key={member.id} className="member-item">
                   <div className="member-info">
-                    <strong>{member.name}</strong> 
+                    <strong>{member.name}</strong>
                     <span className="member-rank">{member.rank}</span>
                   </div>
                   <span className="token-badge">{member.tokens} PT</span>
@@ -105,55 +264,56 @@ function App() {
           )}
         </div>
 
-        {/* TRADE BOARD */}
+        {/* REQUESTS BOARD */}
         <div className="card mt-2">
-            <h2>Trade Board</h2>
-            
-            {/* Create Trade Form */}
-            {currentUser && (
-                <form className="trade-form" onSubmit={handleCreateTrade}>
-                    <h3>Propose a new trade:</h3>
-                    <div className="form-group">
-                        <input type="text" placeholder="I am offering..." value={offering} onChange={e => setOffering(e.target.value)} />
-                        <span className="trade-arrows">⇄</span>
-                        <input type="text" placeholder="I want..." value={wanting} onChange={e => setWanting(e.target.value)} />
-                        <button type="submit">Submit Trade</button>
-                    </div>
-                </form>
-            )}
-            
-            {!currentUser && (
-                <p className="trade-warning">⚠️ You must select your Profile at the top to propose trades.</p>
-            )}
+          <h2>Requests Board</h2>
 
-            {/* List of Trades */}
-            <div className="trades-list">
-                {trades.length === 0 ? (
-                    <p>No trades have been proposed yet.</p>
-                ) : (
-                    trades.map(trade => (
-                        <div key={trade.id} className="trade-item">
-                            <div className="trade-details">
-                                <span className="trade-author"><strong>{trade.requester_name}</strong> proposed a trade:</span>
-                                <div><span className="badge-offer">Offering:</span> {trade.offering}</div>
-                                <div className="mt-1"><span className="badge-want">Wanting:</span> {trade.wanting}</div>
-                            </div>
-                            
-                            <div className="trade-actions">
-                                <span className={`status-badge status-${trade.status}`}>{trade.status.toUpperCase()}</span>
-                                
-                                {/* Founder Admin Controls */}
-                                {currentUser?.name === 'Zach' && trade.status === 'pending' && (
-                                    <div className="admin-controls">
-                                        <button className="btn-accept" onClick={() => handleUpdateStatus(trade.id, 'accepted')}>Accept</button>
-                                        <button className="btn-decline" onClick={() => handleUpdateStatus(trade.id, 'declined')}>Decline</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                )}
+          {/* Create Trade Form */}
+          <form className="trade-form" onSubmit={handleCreateTrade}>
+            <h3>Propose a Trade:</h3>
+            <div className="form-group">
+              <input type="text" placeholder="I am offering..." value={offering} onChange={e => setOffering(e.target.value)} />
+              <span className="trade-arrows">⇄</span>
+              <input type="text" placeholder="I want..." value={wanting} onChange={e => setWanting(e.target.value)} />
+              <button type="submit">Submit</button>
             </div>
+          </form>
+
+          {/* List of all Requests */}
+          <div className="trades-list">
+            {trades.length === 0 ? (
+              <p>No requests yet.</p>
+            ) : (
+              trades.map(trade => (
+                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''}`}>
+                  <div className="trade-details">
+                    {trade.request_type === 'signup' ? (
+                      <>
+                        <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join PearTime</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="trade-author"><strong>{trade.requester_name}</strong> proposed a trade:</span>
+                        <div><span className="badge-offer">Offering:</span> {trade.offering}</div>
+                        <div className="mt-1"><span className="badge-want">Wanting:</span> {trade.wanting}</div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="trade-actions">
+                    <span className={`status-badge status-${trade.status}`}>{trade.status.toUpperCase()}</span>
+
+                    {currentUser?.name === 'Zach' && trade.status === 'pending' && (
+                      <div className="admin-controls">
+                        <button className="btn-accept" onClick={() => handleUpdateStatus(trade, 'accepted')}>Accept</button>
+                        <button className="btn-decline" onClick={() => handleUpdateStatus(trade, 'declined')}>Decline</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
       </main>
