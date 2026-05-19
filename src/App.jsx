@@ -307,7 +307,7 @@ function App() {
         <div className="raffle-banner">
           <span className="raffle-icon">🏆</span>
           <div className="raffle-text">
-            <strong>Raffle Winner:</strong> {winnerMember.name} is today's lucky member!
+            <strong>This Week's Raffle Winner:</strong> {winnerMember.name} is today's lucky member!
           </div>
         </div>
       )}
