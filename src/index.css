@@ -520,3 +520,74 @@ body {
 .row-style {
   flex-wrap: nowrap !important;
 }
+
+/* 3D Print Request Layout */
+.print-shop-card {
+  border-left: 5px solid var(--primary);
+  background: linear-gradient(145deg, #ffffff, #f0fff0);
+}
+.section-subtitle {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: -10px;
+  margin-bottom: 20px;
+}
+.print-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 15px;
+  align-items: flex-end;
+}
+.print-form-grid label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--secondary);
+}
+.btn-print {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-print:hover {
+  background: #3a8a3a;
+  transform: translateY(-2px);
+}
+.badge-print {
+  background: #2196F3;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-right: 8px;
+}
+.trade-inputs-basic {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn-trade {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.border-left {
+  border-left: 1px solid #eee;
+  padding-left: 20px;
+}
+
+@media (max-width: 600px) {
+  .print-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

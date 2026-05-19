@@ -174,18 +174,34 @@ function App() {
     e.preventDefault()
     if (!offering || !wanting) return alert('Please fill in both fields.')
 
-    const finalWanting = tradeColor ? `${wanting} (Color: ${tradeColor})` : wanting
-
     const { data, error } = await supabase.from('trades').insert([{
       requester_name: currentUser.name,
       offering,
-      wanting: finalWanting,
+      wanting,
       request_type: 'trade'
     }]).select()
 
     if (data && data.length > 0) {
       setTrades([data[0], ...trades])
       setOffering('')
+      setWanting('')
+    }
+  }
+
+  // ====== 3D PRINT REQUEST ======
+  const handleCreatePrintRequest = async (e) => {
+    e.preventDefault()
+    if (!wanting || !tradeColor) return alert('Please describe the print and pick a color!')
+
+    const { data, error } = await supabase.from('trades').insert([{
+      requester_name: currentUser.name,
+      offering: '🪙 3D Print Request',
+      wanting: `${wanting} (Color: ${tradeColor})`,
+      request_type: 'print'
+    }]).select()
+
+    if (data && data.length > 0) {
+      setTrades([data[0], ...trades])
       setWanting('')
       setTradeColor('')
     }
@@ -339,7 +355,7 @@ function App() {
                   <button className="btn-confirm" onClick={() => handleSelectWinner(selectedWinnerId)}>Confirm Winner</button>
                 </div>
               </div>
-              <div className="admin-section">
+              <div className="admin-section border-left">
                 <h3>Club Filament Colors:</h3>
                 <div className="color-editor">
                   <input type="text" placeholder="Add color..." value={newColor} onChange={e => setNewColor(e.target.value)} />
@@ -355,31 +371,37 @@ function App() {
           </div>
         )}
 
-        {/* MEMBERS DIRECTORY */}
-        <div className="card mt-2">
-          <h2>Member Directory</h2>
-          {loadingMembers ? (
-            <p>Loading members...</p>
-          ) : members.length === 0 ? (
-            <p>No members yet.</p>
-          ) : (
-            <ul className="member-list">
-              {members.map(member => (
-                <li key={member.id} className="member-item">
-                  <div className="member-info">
-                    <strong>{member.name}</strong>
-                    <span className="member-rank">{member.rank}</span>
-                  </div>
-                  <span className="token-badge">{member.tokens} PT</span>
-                </li>
-              ))}
-            </ul>
-          )}
+        {/* 3D PRINT REQUEST SYSTEM */}
+        <div className="card mt-2 print-shop-card">
+          <h2>🖨️ 3D Print Shop</h2>
+          <p className="section-subtitle">Request a custom 3D print using club filament.</p>
+          
+          <form className="print-form" onSubmit={handleCreatePrintRequest}>
+            <div className="print-form-grid">
+              <div className="form-group">
+                <label>What do you want printed?</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. A small dragon, phone stand, etc." 
+                  value={wanting} 
+                  onChange={e => setWanting(e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Choose Your Color:</label>
+                <select value={tradeColor} onChange={e => setTradeColor(e.target.value)}>
+                  <option value="">-- Select A Color --</option>
+                  {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <button type="submit" className="btn-print">Submit Print Request</button>
+            </div>
+          </form>
         </div>
 
-        {/* REQUESTS BOARD */}
+        {/* TRADES & RAFFLE BOARD */}
         <div className="card mt-2">
-          <h2>Requests Board</h2>
+          <h2>Swap & Prize Board</h2>
 
           {/* Winner Prize Form */}
           {String(currentUser?.id) === String(raffleWinnerId) && (
@@ -400,18 +422,12 @@ function App() {
 
           {/* Create Trade Form */}
           <form className="trade-form" onSubmit={handleCreateTrade}>
-            <h3>Propose a Trade (or 3D Print):</h3>
-            <div className="form-group trade-inputs">
+            <h3>Propose a Fair Trade:</h3>
+            <div className="form-group trade-inputs-basic">
               <input type="text" placeholder="I am offering..." value={offering} onChange={e => setOffering(e.target.value)} />
               <span className="trade-arrows">⇄</span>
-              <div className="wanting-container">
-                <input type="text" placeholder="I want..." value={wanting} onChange={e => setWanting(e.target.value)} />
-                <select value={tradeColor} onChange={e => setTradeColor(e.target.value)}>
-                  <option value="">-- No Print Color --</option>
-                  {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <button type="submit">Submit</button>
+              <input type="text" placeholder="In exchange for..." value={wanting} onChange={e => setWanting(e.target.value)} />
+              <button type="submit" className="btn-trade">Submit Trade</button>
             </div>
           </form>
 
@@ -421,7 +437,7 @@ function App() {
               <p>No requests yet.</p>
             ) : (
               trades.map(trade => (
-                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''} ${trade.request_type === 'raffle' ? 'raffle-request' : ''}`}>
+                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''} ${trade.request_type === 'raffle' ? 'raffle-request' : ''} ${trade.request_type === 'print' ? 'print-request' : ''}`}>
                   <div className="trade-details">
                     {trade.request_type === 'signup' ? (
                       <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join</span>
@@ -430,11 +446,16 @@ function App() {
                         <span className="trade-author"><span className="badge-raffle">🎁 RAFFLE</span> <strong>{trade.requester_name}</strong> claimed their prize:</span>
                         <div className="prize-content">{trade.wanting}</div>
                       </>
+                    ) : trade.request_type === 'print' ? (
+                      <>
+                        <span className="trade-author"><span className="badge-print">🖨️ PRINT</span> <strong>{trade.requester_name}</strong> requested a print:</span>
+                        <div className="prize-content">{trade.wanting}</div>
+                      </>
                     ) : (
                       <>
                         <span className="trade-author"><strong>{trade.requester_name}</strong> proposed a trade:</span>
                         <div><span className="badge-offer">Offering:</span> {trade.offering}</div>
-                        <div className="mt-1"><span className="badge-want">Wanting:</span> {trade.wanting}</div>
+                        <div className="mt-1"><span className="badge-want">In Exchange For:</span> {trade.wanting}</div>
                       </>
                     )}
 
@@ -460,7 +481,7 @@ function App() {
                               autoFocus 
                             />
                             <div className="prompt-buttons">
-                              <button onClick={() => handleUpdateStatus(trade, 'declined', tempDeclineReason)}>Confirm Decline</button>
+                              <button onClick={() => handleUpdateStatus(trade, 'declined', tempDeclineReason)}>Confirm </button>
                               <button className="btn-cancel" onClick={() => { setDecliningId(null); setTempDeclineReason(''); }}>×</button>
                             </div>
                           </div>
@@ -477,6 +498,28 @@ function App() {
               ))
             )}
           </div>
+        </div>
+
+        {/* MEMBERS DIRECTORY */}
+        <div className="card mt-2">
+          <h2>Member Directory</h2>
+          {loadingMembers ? (
+            <p>Loading members...</p>
+          ) : members.length === 0 ? (
+            <p>No members yet.</p>
+          ) : (
+            <ul className="member-list">
+              {members.map(member => (
+                <li key={member.id} className="member-item">
+                  <div className="member-info">
+                    <strong>{member.name}</strong>
+                    <span className="member-rank">{member.rank}</span>
+                  </div>
+                  <span className="token-badge">{member.tokens} PT</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
       </main>
