@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react' // v1.1 refresh
 import { supabase } from './supabase'
 import './index.css'
 
