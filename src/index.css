@@ -591,3 +591,182 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── TAB NAV ─────────────────────────────────────────────────────── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f8f8f8;
+  border-bottom: 2px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #666;
+  transition: all 0.2s;
+}
+.tab-btn:hover { background: #e8f5e9; color: #2e7d32; }
+.tab-active {
+  background: var(--primary);
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(76,175,80,0.4);
+}
+
+/* ─── PEAR CLICKER LAYOUT ─────────────────────────────────────────── */
+.clicker-wrapper {
+  display: flex;
+  gap: 20px;
+  min-height: 460px;
+}
+.clicker-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.clicker-shop {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 520px;
+  padding-right: 4px;
+}
+
+/* Stats row */
+.clicker-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stat-box {
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border: 1px solid #c8e6c9;
+  border-radius: 10px;
+  padding: 10px 18px;
+  text-align: center;
+}
+.stat-box.small { padding: 8px 12px; }
+.stat-num {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #2e7d32;
+  line-height: 1;
+}
+.stat-box.small .stat-num { font-size: 1.2rem; }
+.stat-label { font-size: 0.72rem; color: #777; }
+
+/* Click area */
+.clicker-area {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.clicker-pear {
+  font-size: 8rem;
+  display: block;
+  line-height: 1;
+  transition: transform 0.07s;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
+}
+.clicker-area:active .clicker-pear { transform: scale(0.88); }
+.clicker-pear:hover { animation: pearBounce 0.4s infinite alternate; }
+@keyframes pearBounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px) scale(1.05); }
+}
+.float-num {
+  position: absolute;
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: #2e7d32;
+  pointer-events: none;
+  animation: floatUp 0.8s ease-out forwards;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(255,255,255,0.8);
+}
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-50px); }
+}
+
+/* Token conversion */
+.token-convert-box {
+  width: 100%;
+  background: linear-gradient(135deg, #fff8e1, #fffde7);
+  border: 2px solid #ffe082;
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-align: center;
+}
+.convert-rule { font-size: 0.85rem; margin: 0 0 6px; }
+.convert-preview { font-size: 0.9rem; color: #555; margin: 0 0 10px; }
+.btn-convert {
+  background: linear-gradient(135deg, #ffd600, #ffab00);
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+.btn-convert:hover:not(.disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,171,0,0.4); }
+.btn-convert.disabled { opacity: 0.4; cursor: not-allowed; }
+.tokens-earned { margin: 8px 0 0; font-size: 0.85rem; color: #e65100; }
+
+/* Shop */
+.shop-title { text-align: center; font-size: 1rem; margin: 0 0 4px; color: #555; }
+.upgrade-btn {
+  width: 100%;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+.upgrade-btn.can-buy {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #f1fff2, #ffffff);
+}
+.upgrade-btn.can-buy:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(76,175,80,0.25); }
+.upgrade-btn.cant-buy { opacity: 0.55; cursor: not-allowed; }
+.upgrade-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.upgrade-name { font-weight: 700; font-size: 0.85rem; }
+.upgrade-count { font-weight: 800; color: var(--primary); font-size: 0.9rem; }
+.upgrade-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 4px;
+}
+.upgrade-desc { font-size: 0.72rem; color: #777; max-width: 65%; }
+.upgrade-cost { font-weight: 700; font-size: 0.82rem; color: #2e7d32; }
+.upgrade-bonuses { font-size: 0.7rem; color: #888; margin-top: 3px; }
+
+@media (max-width: 640px) {
+  .clicker-wrapper { flex-direction: column; }
+  .clicker-shop { width: 100%; max-height: 300px; }
+}

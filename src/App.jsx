@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react' // v1.1 refresh
+import React, { useEffect, useState } from 'react' // v1.2 games
 import { supabase } from './supabase'
+import PearClicker from './PearClicker'
 import './index.css'
 
 function App() {
   // Auth state
   const [currentUser, setCurrentUser] = useState(null)
   const [page, setPage] = useState('start') // start, login, signup, home, pending
+  const [activeTab, setActiveTab] = useState('home') // home, print, trade, games
 
   // Data state
   const [members, setMembers] = useState([])
@@ -328,6 +330,13 @@ function App() {
         <p className="subtitle">Official VIP Membership & 3D Printing Platform</p>
       </header>
 
+      {/* TAB NAV */}
+      <nav className="tab-nav">
+        {[['home','🏠 Home'],['print','🖨️ Print Shop'],['trade','🔄 Trades'],['games','🎮 Games']].map(([tab,label]) => (
+          <button key={tab} className={`tab-btn ${activeTab===tab?'tab-active':''}`} onClick={()=>setActiveTab(tab)}>{label}</button>
+        ))}
+      </nav>
+
       {/* RAFFLE ANNOUNCEMENT */}
       {winnerMember && (
         <div className="raffle-banner">
@@ -340,8 +349,20 @@ function App() {
 
       <main className="main-content">
 
-        {/* FOUNDER ADMIN PANEL */}
-        {currentUser?.name === 'Zach' && (
+        {/* GAMES TAB */}
+        {activeTab === 'games' && (
+          <div className="card mt-2">
+            <h2>🎮 Games Hub</h2>
+            <p className="section-subtitle">Play games to earn PearTokens. More games coming soon!</p>
+            <PearClicker
+              currentUser={currentUser}
+              onTokensUpdated={(updated) => setCurrentUser(updated)}
+            />
+          </div>
+        )}
+
+        {/* FOUNDER ADMIN PANEL - shown on home tab only */}
+        {activeTab === 'home' && currentUser?.name === 'Zach' && (
           <div className="card founder-panel">
             <h2>Founder Admin Panel</h2>
             <div className="admin-grid">
@@ -371,8 +392,8 @@ function App() {
           </div>
         )}
 
-        {/* 3D PRINT REQUEST SYSTEM */}
-        <div className="card mt-2 print-shop-card">
+        {/* 3D PRINT SHOP TAB */}
+        {activeTab === 'print' && <div className="card mt-2 print-shop-card">
           <h2>🖨️ 3D Print Shop</h2>
           <p className="section-subtitle">Request a custom 3D print using club filament.</p>
           
@@ -397,10 +418,10 @@ function App() {
               <button type="submit" className="btn-print">Submit Print Request</button>
             </div>
           </form>
-        </div>
+        </div>}
 
-        {/* TRADES & RAFFLE BOARD */}
-        <div className="card mt-2">
+        {/* TRADES & RAFFLE BOARD TAB */}
+        {activeTab === 'trade' && <div className="card mt-2">
           <h2>Swap & Prize Board</h2>
 
           {/* Winner Prize Form */}
@@ -498,10 +519,10 @@ function App() {
               ))
             )}
           </div>
-        </div>
+        </div>}
 
-        {/* MEMBERS DIRECTORY */}
-        <div className="card mt-2">
+        {/* MEMBERS DIRECTORY - home tab only */}
+        {activeTab === 'home' && <div className="card mt-2">
           <h2>Member Directory</h2>
           {loadingMembers ? (
             <p>Loading members...</p>
@@ -520,7 +541,7 @@ function App() {
               ))}
             </ul>
           )}
-        </div>
+        </div>}
 
       </main>
     </div>
