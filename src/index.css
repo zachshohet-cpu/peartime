@@ -1,0 +1,95 @@
+/* PearTime Aesthetic Styling */
+:root {
+  --primary: #2d6a4f; /* Official Green */
+  --secondary: #40916c;
+  --bg-color: #f7fbf8;
+  --text-main: #1b4332;
+  --card-bg: #ffffff;
+  --gold: #d4af37; /* For VIP */
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.header h1 {
+  font-size: 3rem;
+  margin: 0;
+  color: var(--primary);
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: var(--secondary);
+  font-style: italic;
+}
+
+.card {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-left: 6px solid var(--primary);
+}
+
+.card h2 {
+  margin-top: 0;
+  color: var(--primary);
+}
+
+/* Member List Styles */
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.member-item:last-child {
+  border-bottom: none;
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-rank {
+  font-size: 0.85rem;
+  color: var(--secondary);
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.token-badge {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
