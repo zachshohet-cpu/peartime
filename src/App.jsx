@@ -14,6 +14,7 @@ function App() {
 
   // Raffle State
   const [raffleWinnerId, setRaffleWinnerId] = useState(null)
+  const [selectedWinnerId, setSelectedWinnerId] = useState('')
   const [availableColors, setAvailableColors] = useState([])
   const [newColor, setNewColor] = useState('')
 
@@ -50,7 +51,11 @@ function App() {
     const { data: cData } = await supabase.from('site_config').select('*')
     if (cData) {
       const winner = cData.find(c => c.key === 'raffle_winner_id')
-      if (winner) setRaffleWinnerId(JSON.parse(winner.value))
+      if (winner) {
+        const wId = JSON.parse(winner.value)
+        setRaffleWinnerId(wId)
+        setSelectedWinnerId(wId || '')
+      }
       
       const colors = cData.find(c => c.key === 'available_colors')
       if (colors) setAvailableColors(JSON.parse(colors.value))
@@ -321,10 +326,13 @@ function App() {
             <div className="admin-grid">
               <div className="admin-section">
                 <h3>Select Raffle Winner:</h3>
-                <select onChange={(e) => handleSelectWinner(e.target.value)} value={raffleWinnerId || ''}>
-                  <option value="">-- No Current Winner --</option>
-                  {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
+                <div className="admin-row">
+                  <select onChange={(e) => setSelectedWinnerId(e.target.value)} value={selectedWinnerId}>
+                    <option value="">-- No Current Winner --</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <button className="btn-confirm" onClick={() => handleSelectWinner(selectedWinnerId)}>Confirm Winner</button>
+                </div>
               </div>
               <div className="admin-section">
                 <h3>Available Print Colors:</h3>

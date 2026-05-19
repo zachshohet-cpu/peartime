@@ -477,3 +477,22 @@ body {
   background: #eee !important;
   color: #666 !important;
 }
+
+/* Admin Layout Updates */
+.admin-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-confirm {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.btn-confirm:hover {
+  background: var(--secondary);
+}
