@@ -29,6 +29,7 @@ function App() {
   const [signupPassword, setSignupPassword] = useState('')
   const [offering, setOffering] = useState('')
   const [wanting, setWanting] = useState('')
+  const [tradeColor, setTradeColor] = useState('')
   const [prizeDescription, setPrizeDescription] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -62,13 +63,7 @@ function App() {
     }
   }
 
-  // ====== RAFFLE ADMIN ======
-  const handleSelectWinner = async (memberId) => {
-    const val = memberId ? String(memberId) : 'null'
-    await supabase.from('site_config').upsert({ key: 'raffle_winner_id', value: val })
-    setRaffleWinnerId(memberId)
-  }
-
+  // ====== COLOR ADMIN ======
   const handleAddColor = async () => {
     if (!newColor) return
     const updated = [...availableColors, newColor]
@@ -81,6 +76,13 @@ function App() {
     const updated = availableColors.filter(c => c !== color)
     await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
     setAvailableColors(updated)
+  }
+
+  // ====== RAFFLE ADMIN ======
+  const handleSelectWinner = async (memberId) => {
+    const val = memberId ? String(memberId) : 'null'
+    await supabase.from('site_config').upsert({ key: 'raffle_winner_id', value: val })
+    setRaffleWinnerId(memberId)
   }
 
   // ====== PRIZE CLAIM ======
@@ -172,10 +174,12 @@ function App() {
     e.preventDefault()
     if (!offering || !wanting) return alert('Please fill in both fields.')
 
+    const finalWanting = tradeColor ? `${wanting} (Color: ${tradeColor})` : wanting
+
     const { data, error } = await supabase.from('trades').insert([{
       requester_name: currentUser.name,
       offering,
-      wanting,
+      wanting: finalWanting,
       request_type: 'trade'
     }]).select()
 
@@ -183,6 +187,7 @@ function App() {
       setTrades([data[0], ...trades])
       setOffering('')
       setWanting('')
+      setTradeColor('')
     }
   }
 
@@ -335,7 +340,7 @@ function App() {
                 </div>
               </div>
               <div className="admin-section">
-                <h3>Available Print Colors:</h3>
+                <h3>Club Filament Colors:</h3>
                 <div className="color-editor">
                   <input type="text" placeholder="Add color..." value={newColor} onChange={e => setNewColor(e.target.value)} />
                   <button onClick={handleAddColor}>Add</button>
@@ -381,7 +386,7 @@ function App() {
             <div className="raffle-prize-form">
               <h3>🎁 Claim Your Raffle Prize!</h3>
               <form onSubmit={handleClaimPrize}>
-                <div className="form-group">
+                <div className="form-group row-style">
                   <input type="text" placeholder="What would you like for your prize?" value={prizeDescription} onChange={e => setPrizeDescription(e.target.value)} />
                   <select value={selectedColor} onChange={e => setSelectedColor(e.target.value)}>
                     <option value="">-- Choose Color --</option>
@@ -395,11 +400,17 @@ function App() {
 
           {/* Create Trade Form */}
           <form className="trade-form" onSubmit={handleCreateTrade}>
-            <h3>Propose a Trade:</h3>
-            <div className="form-group">
+            <h3>Propose a Trade (or 3D Print):</h3>
+            <div className="form-group trade-inputs">
               <input type="text" placeholder="I am offering..." value={offering} onChange={e => setOffering(e.target.value)} />
               <span className="trade-arrows">⇄</span>
-              <input type="text" placeholder="I want..." value={wanting} onChange={e => setWanting(e.target.value)} />
+              <div className="wanting-container">
+                <input type="text" placeholder="I want..." value={wanting} onChange={e => setWanting(e.target.value)} />
+                <select value={tradeColor} onChange={e => setTradeColor(e.target.value)}>
+                  <option value="">-- No Print Color --</option>
+                  {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
               <button type="submit">Submit</button>
             </div>
           </form>
