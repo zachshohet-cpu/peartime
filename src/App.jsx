@@ -17,6 +17,10 @@ function App() {
   const [availableColors, setAvailableColors] = useState([])
   const [newColor, setNewColor] = useState('')
 
+  // Admin / Feedback state
+  const [decliningId, setDecliningId] = useState(null)
+  const [tempDeclineReason, setTempDeclineReason] = useState('')
+
   // Form state
   const [loginName, setLoginName] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -178,14 +182,16 @@ function App() {
   }
 
   // ====== APPROVE / DECLINE ======
-  const handleUpdateStatus = async (trade, newStatus) => {
-    await supabase.from('trades').update({ status: newStatus }).eq('id', trade.id)
+  const handleUpdateStatus = async (trade, newStatus, reason = '') => {
+    await supabase.from('trades').update({ status: newStatus, decline_reason: reason }).eq('id', trade.id)
 
     if (trade.request_type === 'signup' && newStatus === 'accepted') {
       await supabase.from('members').update({ approved: true }).eq('name', trade.requester_name)
     }
 
-    setTrades(trades.map(t => t.id === trade.id ? { ...t, status: newStatus } : t))
+    setTrades(trades.map(t => t.id === trade.id ? { ...t, status: newStatus, decline_reason: reason } : t))
+    setDecliningId(null)
+    setTempDeclineReason('')
   }
 
   const handleLogout = () => {
@@ -412,6 +418,12 @@ function App() {
                         <div className="mt-1"><span className="badge-want">Wanting:</span> {trade.wanting}</div>
                       </>
                     )}
+
+                    {trade.status === 'declined' && trade.decline_reason && (
+                      <div className="feedback-box">
+                        <strong>Founder Feedback:</strong> {trade.decline_reason}
+                      </div>
+                    )}
                   </div>
 
                   <div className="trade-actions">
@@ -419,8 +431,26 @@ function App() {
 
                     {currentUser?.name === 'Zach' && trade.status === 'pending' && (
                       <div className="admin-controls">
-                        <button className="btn-accept" onClick={() => handleUpdateStatus(trade, 'accepted')}>Accept</button>
-                        <button className="btn-decline" onClick={() => handleUpdateStatus(trade, 'declined')}>Decline</button>
+                        {decliningId === trade.id ? (
+                          <div className="decline-prompt">
+                            <input 
+                              type="text" 
+                              placeholder="Why are you declining?" 
+                              value={tempDeclineReason} 
+                              onChange={e => setTempDeclineReason(e.target.value)}
+                              autoFocus 
+                            />
+                            <div className="prompt-buttons">
+                              <button onClick={() => handleUpdateStatus(trade, 'declined', tempDeclineReason)}>Confirm Decline</button>
+                              <button className="btn-cancel" onClick={() => { setDecliningId(null); setTempDeclineReason(''); }}>×</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <button className="btn-accept" onClick={() => handleUpdateStatus(trade, 'accepted')}>Accept</button>
+                            <button className="btn-decline" onClick={() => setDecliningId(trade.id)}>Decline</button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

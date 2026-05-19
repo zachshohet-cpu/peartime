@@ -431,3 +431,49 @@ body {
 .badge-raffle { background: #fab005; color: #862e00; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
 .raffle-request { border-color: #fab005; background: #fffdf5; }
 .prize-content { font-size: 1.1rem; margin-top: 5px; font-weight: 600; color: #862e00; }
+
+/* Decline Reason Styling */
+.feedback-box {
+  background: #fff5f5;
+  border: 1px solid #ffcfcf;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #c92a2a;
+}
+.feedback-box strong { color: #8a1d1d; }
+
+.decline-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  padding: 8px;
+  border: 1px solid #ffcfcf;
+  border-radius: 6px;
+}
+.decline-prompt input {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.prompt-buttons {
+  display: flex;
+  gap: 5px;
+}
+.prompt-buttons button {
+  flex: 1;
+  background: #e63946;
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.btn-cancel {
+  flex: 0 0 30px !important;
+  background: #eee !important;
+  color: #666 !important;
+}
