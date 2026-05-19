@@ -12,6 +12,11 @@ function App() {
   const [trades, setTrades] = useState([])
   const [loadingMembers, setLoadingMembers] = useState(true)
 
+  // Raffle State
+  const [raffleWinnerId, setRaffleWinnerId] = useState(null)
+  const [availableColors, setAvailableColors] = useState([])
+  const [newColor, setNewColor] = useState('')
+
   // Form state
   const [loginName, setLoginName] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -19,6 +24,8 @@ function App() {
   const [signupPassword, setSignupPassword] = useState('')
   const [offering, setOffering] = useState('')
   const [wanting, setWanting] = useState('')
+  const [prizeDescription, setPrizeDescription] = useState('')
+  const [selectedColor, setSelectedColor] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
   // Load data when user reaches the home screen
@@ -35,6 +42,57 @@ function App() {
 
     const { data: tData } = await supabase.from('trades').select('*').order('created_at', { ascending: false })
     if (tData) setTrades(tData)
+
+    const { data: cData } = await supabase.from('site_config').select('*')
+    if (cData) {
+      const winner = cData.find(c => c.key === 'raffle_winner_id')
+      if (winner) setRaffleWinnerId(JSON.parse(winner.value))
+      
+      const colors = cData.find(c => c.key === 'available_colors')
+      if (colors) setAvailableColors(JSON.parse(colors.value))
+    }
+  }
+
+  // ====== RAFFLE ADMIN ======
+  const handleSelectWinner = async (memberId) => {
+    const val = memberId ? String(memberId) : 'null'
+    await supabase.from('site_config').upsert({ key: 'raffle_winner_id', value: val })
+    setRaffleWinnerId(memberId)
+  }
+
+  const handleAddColor = async () => {
+    if (!newColor) return
+    const updated = [...availableColors, newColor]
+    await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
+    setAvailableColors(updated)
+    setNewColor('')
+  }
+
+  const handleRemoveColor = async (color) => {
+    const updated = availableColors.filter(c => c !== color)
+    await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
+    setAvailableColors(updated)
+  }
+
+  // ====== PRIZE CLAIM ======
+  const handleClaimPrize = async (e) => {
+    e.preventDefault()
+    if (!prizeDescription || !selectedColor) return alert('Please enter a description and pick a color!')
+
+    const { data, error } = await supabase.from('trades').insert([{
+      requester_name: currentUser.name,
+      offering: '🎁 Raffle Prize Request',
+      wanting: `${prizeDescription} (Color: ${selectedColor})`,
+      status: 'pending',
+      request_type: 'raffle'
+    }]).select()
+
+    if (data) {
+      setTrades([data[0], ...trades])
+      setPrizeDescription('')
+      setSelectedColor('')
+      alert('Your prize request has been sent to Zach!')
+    }
   }
 
   // ====== LOGIN ======
@@ -73,14 +131,12 @@ function App() {
       return
     }
 
-    // Check if name already exists
     const { data: existing } = await supabase.from('members').select('id').eq('name', signupName)
     if (existing && existing.length > 0) {
       setErrorMsg('That name is already taken! Try a different one.')
       return
     }
 
-    // Create the member (unapproved)
     const { data: newMember, error: memberError } = await supabase
       .from('members')
       .insert([{ name: signupName, password: signupPassword, approved: false, rank: 'Level 0', tokens: 0 }])
@@ -91,7 +147,6 @@ function App() {
       return
     }
 
-    // Create a signup request in the trades table
     await supabase.from('trades').insert([{
       requester_name: signupName,
       offering: 'New member signup request',
@@ -126,7 +181,6 @@ function App() {
   const handleUpdateStatus = async (trade, newStatus) => {
     await supabase.from('trades').update({ status: newStatus }).eq('id', trade.id)
 
-    // If it's a signup request being accepted, approve the member
     if (trade.request_type === 'signup' && newStatus === 'accepted') {
       await supabase.from('members').update({ approved: true }).eq('name', trade.requester_name)
     }
@@ -143,6 +197,8 @@ function App() {
     setSignupPassword('')
     setErrorMsg('')
   }
+
+  const winnerMember = members.find(m => String(m.id) === String(raffleWinnerId))
 
   // =============================================
   // START PAGE
@@ -240,10 +296,48 @@ function App() {
         <p className="subtitle">Official VIP Membership & 3D Printing Platform</p>
       </header>
 
+      {/* RAFFLE ANNOUNCEMENT */}
+      {winnerMember && (
+        <div className="raffle-banner">
+          <span className="raffle-icon">🏆</span>
+          <div className="raffle-text">
+            <strong>Raffle Winner:</strong> {winnerMember.name} is today's lucky member!
+          </div>
+        </div>
+      )}
+
       <main className="main-content">
 
+        {/* FOUNDER ADMIN PANEL */}
+        {currentUser?.name === 'Zach' && (
+          <div className="card founder-panel">
+            <h2>Founder Admin Panel</h2>
+            <div className="admin-grid">
+              <div className="admin-section">
+                <h3>Select Raffle Winner:</h3>
+                <select onChange={(e) => handleSelectWinner(e.target.value)} value={raffleWinnerId || ''}>
+                  <option value="">-- No Current Winner --</option>
+                  {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="admin-section">
+                <h3>Available Print Colors:</h3>
+                <div className="color-editor">
+                  <input type="text" placeholder="Add color..." value={newColor} onChange={e => setNewColor(e.target.value)} />
+                  <button onClick={handleAddColor}>Add</button>
+                </div>
+                <div className="color-list">
+                  {availableColors.map(c => (
+                    <span key={c} className="color-tag">{c} <button onClick={() => handleRemoveColor(c)}>×</button></span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* MEMBERS DIRECTORY */}
-        <div className="card">
+        <div className="card mt-2">
           <h2>Member Directory</h2>
           {loadingMembers ? (
             <p>Loading members...</p>
@@ -268,6 +362,23 @@ function App() {
         <div className="card mt-2">
           <h2>Requests Board</h2>
 
+          {/* Winner Prize Form */}
+          {String(currentUser?.id) === String(raffleWinnerId) && (
+            <div className="raffle-prize-form">
+              <h3>🎁 Claim Your Raffle Prize!</h3>
+              <form onSubmit={handleClaimPrize}>
+                <div className="form-group">
+                  <input type="text" placeholder="What would you like for your prize?" value={prizeDescription} onChange={e => setPrizeDescription(e.target.value)} />
+                  <select value={selectedColor} onChange={e => setSelectedColor(e.target.value)}>
+                    <option value="">-- Choose Color --</option>
+                    {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button type="submit" className="btn-claim">Request Prize</button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {/* Create Trade Form */}
           <form className="trade-form" onSubmit={handleCreateTrade}>
             <h3>Propose a Trade:</h3>
@@ -285,11 +396,14 @@ function App() {
               <p>No requests yet.</p>
             ) : (
               trades.map(trade => (
-                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''}`}>
+                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''} ${trade.request_type === 'raffle' ? 'raffle-request' : ''}`}>
                   <div className="trade-details">
                     {trade.request_type === 'signup' ? (
+                      <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join</span>
+                    ) : trade.request_type === 'raffle' ? (
                       <>
-                        <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join PearTime</span>
+                        <span className="trade-author"><span className="badge-raffle">🎁 RAFFLE</span> <strong>{trade.requester_name}</strong> claimed their prize:</span>
+                        <div className="prize-content">{trade.wanting}</div>
                       </>
                     ) : (
                       <>
