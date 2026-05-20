@@ -18,7 +18,9 @@ function App() {
   const [raffleWinnerId, setRaffleWinnerId] = useState(null)
   const [selectedWinnerId, setSelectedWinnerId] = useState('')
   const [availableColors, setAvailableColors] = useState([])
+  const [premiumColors, setPremiumColors] = useState([])
   const [newColor, setNewColor] = useState('')
+  const [newPremiumColor, setNewPremiumColor] = useState('')
 
   // Admin / Feedback state
   const [decliningId, setDecliningId] = useState(null)
@@ -62,22 +64,39 @@ function App() {
       
       const colors = cData.find(c => c.key === 'available_colors')
       if (colors) setAvailableColors(JSON.parse(colors.value))
+
+      const premium = cData.find(c => c.key === 'premium_colors')
+      if (premium) setPremiumColors(JSON.parse(premium.value))
     }
   }
 
   // ====== COLOR ADMIN ======
-  const handleAddColor = async () => {
-    if (!newColor) return
-    const updated = [...availableColors, newColor]
-    await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
-    setAvailableColors(updated)
-    setNewColor('')
+  const handleAddColor = async (colorType) => {
+    if (colorType === 'premium') {
+      if (!newPremiumColor) return
+      const updated = [...premiumColors, newPremiumColor]
+      await supabase.from('site_config').upsert({ key: 'premium_colors', value: JSON.stringify(updated) })
+      setPremiumColors(updated)
+      setNewPremiumColor('')
+    } else {
+      if (!newColor) return
+      const updated = [...availableColors, newColor]
+      await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
+      setAvailableColors(updated)
+      setNewColor('')
+    }
   }
 
-  const handleRemoveColor = async (color) => {
-    const updated = availableColors.filter(c => c !== color)
-    await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
-    setAvailableColors(updated)
+  const handleRemoveColor = async (color, colorType) => {
+    if (colorType === 'premium') {
+      const updated = premiumColors.filter(c => c !== color)
+      await supabase.from('site_config').upsert({ key: 'premium_colors', value: JSON.stringify(updated) })
+      setPremiumColors(updated)
+    } else {
+      const updated = availableColors.filter(c => c !== color)
+      await supabase.from('site_config').upsert({ key: 'available_colors', value: JSON.stringify(updated) })
+      setAvailableColors(updated)
+    }
   }
 
   // ====== RAFFLE ADMIN ======
@@ -206,6 +225,43 @@ function App() {
       setTrades([data[0], ...trades])
       setWanting('')
       setTradeColor('')
+    }
+  }
+
+  // ====== TOKEN SHOP ======
+  const [shopDesc, setShopDesc] = useState('')
+  const [shopColor, setShopColor] = useState('')
+
+  const handleBuyPerk = async (type) => {
+    const cost = type === 'priority' ? 10 : 5
+    if (currentUser.tokens < cost) return alert('Not enough PearTokens!')
+    if (!shopDesc || !shopColor) return alert('Please fill in the description and color!')
+
+    const { data: memberData, error: memberError } = await supabase
+      .from('members')
+      .update({ tokens: currentUser.tokens - cost })
+      .eq('id', currentUser.id)
+      .select()
+      .single()
+
+    if (!memberError && memberData) {
+      setCurrentUser(memberData)
+      setMembers(members.map(m => m.id === memberData.id ? memberData : m))
+
+      const label = type === 'priority' ? '🚀 PRIORITY Print' : '💎 PREMIUM Color Print'
+      const { data: tradeData } = await supabase.from('trades').insert([{
+        requester_name: currentUser.name,
+        offering: `🛒 SHOP: ${label}`,
+        wanting: `${shopDesc} (Color: ${shopColor})`,
+        request_type: 'print'
+      }]).select()
+
+      if (tradeData) {
+        setTrades([tradeData[0], ...trades])
+        setShopDesc('')
+        setShopColor('')
+        alert('Purchase successful! Your request is on the board.')
+      }
     }
   }
 
@@ -401,12 +457,23 @@ function App() {
               <div className="admin-section border-left">
                 <h3>Club Filament Colors:</h3>
                 <div className="color-editor">
-                  <input type="text" placeholder="Add color..." value={newColor} onChange={e => setNewColor(e.target.value)} />
-                  <button onClick={handleAddColor}>Add</button>
+                  <input type="text" placeholder="Regular..." value={newColor} onChange={e => setNewColor(e.target.value)} />
+                  <button onClick={() => handleAddColor('regular')}>Add</button>
                 </div>
                 <div className="color-list">
                   {availableColors.map(c => (
-                    <span key={c} className="color-tag">{c} <button onClick={() => handleRemoveColor(c)}>×</button></span>
+                    <span key={c} className="color-tag">{c} <button onClick={() => handleRemoveColor(c, 'regular')}>×</button></span>
+                  ))}
+                </div>
+                
+                <h3 className="mt-1">Premium Colors (5 PT):</h3>
+                <div className="color-editor">
+                  <input type="text" placeholder="Premium..." value={newPremiumColor} onChange={e => setNewPremiumColor(e.target.value)} />
+                  <button onClick={() => handleAddColor('premium')}>Add</button>
+                </div>
+                <div className="color-list">
+                  {premiumColors.map(c => (
+                    <span key={c} className="color-tag premium-tag">{c} <button onClick={() => handleRemoveColor(c, 'premium')}>×</button></span>
                   ))}
                 </div>
               </div>
@@ -440,6 +507,49 @@ function App() {
               <button type="submit" className="btn-print">Submit Print Request</button>
             </div>
           </form>
+
+          <hr className="shop-divider" />
+          
+          <div className="shop-section">
+            <h3>🛒 PearToken Shop</h3>
+            <p className="shop-info">Use your tokens to get perks!</p>
+            
+            <div className="shop-grid">
+              {/* Priority Print */}
+              <div className="shop-item">
+                <div className="shop-item-header">
+                  <h4>🚀 Front of the Line</h4>
+                  <span className="price-badge">10 PT</span>
+                </div>
+                <p>Jump to the front of the 3D printing queue!</p>
+                <div className="shop-form">
+                  <input type="text" placeholder="What to print?" value={shopDesc} onChange={e => setShopDesc(e.target.value)} />
+                  <select value={shopColor} onChange={e => setShopColor(e.target.value)}>
+                    <option value="">-- Color --</option>
+                    {availableColors.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button className="btn-buy" onClick={() => handleBuyPerk('priority')}>Buy Priority</button>
+                </div>
+              </div>
+
+              {/* Premium Color */}
+              <div className="shop-item">
+                <div className="shop-item-header">
+                  <h4>💎 Premium Color</h4>
+                  <span className="price-badge">5 PT</span>
+                </div>
+                <p>Unlock a special color from the premium list!</p>
+                <div className="shop-form">
+                  <input type="text" placeholder="What to print?" value={shopDesc} onChange={e => setShopDesc(e.target.value)} />
+                  <select value={shopColor} onChange={e => setShopColor(e.target.value)}>
+                    <option value="">-- Premium --</option>
+                    {premiumColors.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button className="btn-buy" onClick={() => handleBuyPerk('premium')}>Buy Premium</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>}
 
         {/* TRADES & RAFFLE BOARD TAB */}
