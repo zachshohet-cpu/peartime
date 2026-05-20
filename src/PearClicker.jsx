@@ -18,13 +18,28 @@ function getUpgradeCost(upgrade, ownedCount) {
   return Math.floor(upgrade.baseCost * Math.pow(1.15, ownedCount))
 }
 
+// Returns a string like "2026-W21" to identify the current ISO week
+function getISOWeek() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7))
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
+  return `${d.getFullYear()}-W${week}`
+}
+
 export default function PearClicker({ currentUser, onTokensUpdated }) {
   const [score, setScore]               = useState(0)
   const [totalEarned, setTotalEarned]   = useState(0)
   const [clickPower, setClickPower]     = useState(1)
   const [passiveRate, setPassiveRate]   = useState(0)
   const [owned, setOwned]               = useState({}) // { upgrade_id: count }
-  const [tokensGained, setTokensGained] = useState(0)
+  const [tokensGained, setTokensGained] = useState(() => {
+    // Load weekly token count from localStorage
+    const stored = JSON.parse(localStorage.getItem('pearclicker_weekly') || '{}')
+    const thisWeek = getISOWeek()
+    return stored.week === thisWeek ? (stored.tokens || 0) : 0
+  })
   const [floatingNums, setFloatingNums] = useState([])
   const [converting, setConverting]     = useState(false)
   const passiveRef   = useRef(passiveRate)
@@ -104,8 +119,10 @@ export default function PearClicker({ currentUser, onTokensUpdated }) {
       .single()
 
     if (!error && data) {
+      const newTotal = tokensGained + convertibleTokens
       setScore(s => parseFloat((s - convertibleTokens * 50000).toFixed(2)))
-      setTokensGained(t => t + convertibleTokens)
+      setTokensGained(newTotal)
+      localStorage.setItem('pearclicker_weekly', JSON.stringify({ week: getISOWeek(), tokens: newTotal }))
       onTokensUpdated && onTokensUpdated(data)
     }
     setConverting(false)
