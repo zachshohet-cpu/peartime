@@ -86,8 +86,10 @@ export default function PearClicker({ currentUser, onTokensUpdated }) {
   }
 
   // ── Convert score → PearTokens ───────────────────────────────────────────
-  // Rule: 6 score = 3 PearTokens  →  every 2 score = 1 PearToken
-  const convertibleTokens = Math.floor(score / 2)
+  // Rule: 50,000 pears = 1 PearToken, max 4 tokens per session
+  const MAX_TOKENS = 4
+  const tokensLeft = MAX_TOKENS - tokensGained
+  const convertibleTokens = Math.min(Math.floor(score / 50000), tokensLeft)
 
   const handleConvert = async () => {
     if (convertibleTokens < 1) return
@@ -102,7 +104,7 @@ export default function PearClicker({ currentUser, onTokensUpdated }) {
       .single()
 
     if (!error && data) {
-      setScore(s => parseFloat((s - scoreUsed).toFixed(2)))
+      setScore(s => parseFloat((s - convertibleTokens * 50000).toFixed(2)))
       setTokensGained(t => t + convertibleTokens)
       onTokensUpdated && onTokensUpdated(data)
     }
@@ -143,20 +145,21 @@ export default function PearClicker({ currentUser, onTokensUpdated }) {
 
         {/* Token conversion */}
         <div className="token-convert-box">
-          <p className="convert-rule">💱 <strong>6 pears = 3 PearTokens</strong> (ratio 2:1)</p>
+          <p className="convert-rule">💱 <strong>50,000 pears = 1 PearToken</strong> (max 4 per session)</p>
           <p className="convert-preview">
-            You can convert <strong>{Math.floor(score)} pears</strong> into{' '}
-            <strong>{convertibleTokens} PT</strong>
+            {tokensGained >= MAX_TOKENS
+              ? '✅ You have earned the maximum 4 tokens this session!'
+              : <>You can earn <strong>{convertibleTokens}</strong> more token{convertibleTokens !== 1 ? 's' : ''} right now ({tokensGained}/{MAX_TOKENS} earned)</>}
           </p>
           <button
-            className={`btn-convert ${convertibleTokens < 1 ? 'disabled' : ''}`}
+            className={`btn-convert ${convertibleTokens < 1 || tokensGained >= MAX_TOKENS ? 'disabled' : ''}`}
             onClick={handleConvert}
-            disabled={convertibleTokens < 1 || converting}
+            disabled={convertibleTokens < 1 || tokensGained >= MAX_TOKENS || converting}
           >
-            {converting ? 'Converting…' : `Convert → ${convertibleTokens} PearTokens`}
+            {converting ? 'Converting…' : `Convert → +${convertibleTokens} PearToken${convertibleTokens !== 1 ? 's' : ''}`}
           </button>
           {tokensGained > 0 && (
-            <p className="tokens-earned">🏆 Total earned this session: <strong>{tokensGained} PT</strong></p>
+            <p className="tokens-earned">🏆 Earned this session: <strong>{tokensGained} / {MAX_TOKENS} PT</strong></p>
           )}
         </div>
       </div>
