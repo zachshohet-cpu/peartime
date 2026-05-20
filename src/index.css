@@ -770,3 +770,37 @@ body {
   .clicker-wrapper { flex-direction: column; }
   .clicker-shop { width: 100%; max-height: 300px; }
 }
+
+/* Token Management Styles */
+.token-management {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.token-adjust-btns {
+  display: flex;
+  gap: 4px;
+}
+.token-adjust-btns button {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-plus:hover {
+  background: #e8f5e9;
+  border-color: #4caf50;
+  color: #4caf50;
+}
+.btn-minus:hover {
+  background: #ffebee;
+  border-color: #f44336;
+  color: #f44336;
+}

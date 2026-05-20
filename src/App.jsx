@@ -232,6 +232,28 @@ function App() {
     setErrorMsg('')
   }
 
+  // ====== ECONOMICS ======
+  const handleAdjustTokens = async (memberId, amount) => {
+    const member = members.find(m => m.id === memberId)
+    if (!member) return
+
+    const newTotal = (member.tokens || 0) + amount
+    const { data, error } = await supabase
+      .from('members')
+      .update({ tokens: newTotal })
+      .eq('id', memberId)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setMembers(members.map(m => m.id === memberId ? data : m))
+      // If we adjusted our own tokens, update currentUser too
+      if (currentUser.id === memberId) {
+        setCurrentUser(data)
+      }
+    }
+  }
+
   const winnerMember = members.find(m => String(m.id) === String(raffleWinnerId))
 
   // =============================================
@@ -536,7 +558,15 @@ function App() {
                     <strong>{member.name}</strong>
                     <span className="member-rank">{member.rank}</span>
                   </div>
-                  <span className="token-badge">{member.tokens} PT</span>
+                  <div className="token-management">
+                    {currentUser?.name === 'Zach' && (
+                      <div className="token-adjust-btns">
+                        <button className="btn-minus" onClick={() => handleAdjustTokens(member.id, -1)}>−</button>
+                        <button className="btn-plus" onClick={() => handleAdjustTokens(member.id, 1)}>+</button>
+                      </div>
+                    )}
+                    <span className="token-badge">{member.tokens} PT</span>
+                  </div>
                 </li>
               ))}
             </ul>
