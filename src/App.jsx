@@ -5,9 +5,18 @@ import './index.css'
 
 function App() {
   // Auth state
-  const [currentUser, setCurrentUser] = useState(null)
-  const [page, setPage] = useState('start') // start, login, signup, home, pending
-  const [activeTab, setActiveTab] = useState('home') // home, print, trade, games
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('peartime_user')
+    return saved ? JSON.parse(saved) : null
+  })
+  const [page, setPage] = useState(() => {
+    const saved = localStorage.getItem('peartime_page')
+    return saved || 'start'
+  })
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('peartime_tab')
+    return saved || 'home'
+  })
 
   // Data state
   const [members, setMembers] = useState([])
@@ -37,6 +46,53 @@ function App() {
   const [prizeDescription, setPrizeDescription] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('peartime_user', JSON.stringify(currentUser))
+    } else {
+      localStorage.removeItem('peartime_user')
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    localStorage.setItem('peartime_page', page)
+  }, [page])
+
+  useEffect(() => {
+    localStorage.setItem('peartime_tab', activeTab)
+  }, [activeTab])
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const savedUser = localStorage.getItem('peartime_user')
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser)
+          const { data, error } = await supabase
+            .from('members')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+
+          if (error || !data || !data.approved) {
+            setCurrentUser(null)
+            setPage('start')
+            setLoginName('')
+            setLoginPassword('')
+            setSignupName('')
+            setSignupPassword('')
+            setErrorMsg('')
+          } else {
+            setCurrentUser(data)
+          }
+        } catch (e) {
+          localStorage.removeItem('peartime_user')
+        }
+      }
+    }
+    checkUser()
+  }, [])
 
   // Load data when user reaches the home screen
   useEffect(() => {
