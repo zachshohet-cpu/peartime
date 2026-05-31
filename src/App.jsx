@@ -310,6 +310,30 @@ function App() {
     }
   }
 
+  const handleKickMember = async (memberId) => {
+    const member = members.find(m => m.id === memberId)
+    if (!member) return
+    if (member.name === 'Zach') {
+      alert("You cannot delete the founder account!")
+      return
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to kick ${member.name} from the club? This will permanently delete their account.`)
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('members')
+      .delete()
+      .eq('id', memberId)
+
+    if (!error) {
+      setMembers(members.filter(m => m.id !== memberId))
+      alert(`${member.name} has been kicked from the club.`)
+    } else {
+      alert(`Error kicking member: ${error.message}`)
+    }
+  }
+
   const winnerMember = members.find(m => String(m.id) === String(raffleWinnerId))
 
   // =============================================
@@ -665,7 +689,18 @@ function App() {
               {members.map(member => (
                 <li key={member.id} className="member-item">
                   <div className="member-info">
-                    <strong>{member.name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <strong>{member.name}</strong>
+                      {currentUser?.name === 'Zach' && member.name !== 'Zach' && (
+                        <button 
+                          className="btn-kick" 
+                          onClick={() => handleKickMember(member.id)}
+                          title="Kick member"
+                        >
+                          delete
+                        </button>
+                      )}
+                    </div>
                     <span className="member-rank">{member.rank}</span>
                   </div>
                   <div className="token-management">

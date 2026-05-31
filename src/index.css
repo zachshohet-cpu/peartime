@@ -874,3 +874,22 @@ body {
   color: #ffab00 !important;
 }
 .badge-offer { color: #555; font-weight: bold; }
+
+.btn-kick {
+  background: #ffe5e5;
+  color: #d63031;
+  border: 1px solid #ffccd2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: lowercase;
+}
+
+.btn-kick:hover {
+  background: #d63031;
+  color: white;
+  border-color: #d63031;
+}
