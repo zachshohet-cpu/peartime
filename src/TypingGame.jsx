@@ -13,7 +13,7 @@ const WORD_POOL = [
   'good', 'some', 'could', 'them', 'see', 'other', 'than', 'then', 'now', 'look',
   'only', 'come', 'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two',
   'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'any',
-  'these', 'give', 'day', 'most', 'us', 'great', 'between', 'need', 'large', 'often',
+  'these', 'give', 'day', 'most', 'us', 'great', 'between', 'need', 'large', 'often', 'hello', 'zach cooks',
   // Tech words
   'code', 'data', 'file', 'loop', 'test', 'build', 'push', 'pull', 'merge', 'clone',
   'debug', 'error', 'stack', 'array', 'query', 'index', 'cache', 'token', 'fetch', 'async',
@@ -25,7 +25,7 @@ const WORD_POOL = [
   'skirt', 'gcode', 'hotend', 'retract', 'overhang', 'bridge', 'mesh', 'boolean', 'axis', 'print',
   'model', 'stitch', 'mirror', 'hollow', 'solid', 'shell', 'draft', 'scale', 'orient', 'slice',
   'plate', 'purge', 'prime', 'warp', 'crack', 'fuse', 'melt', 'cool', 'speed', 'travel',
-  'extruder', 'bed', 'adhesion', 'calibrate', 'firmware', 'sensor', 'stepper', 'belt', 'rail', 'frame',
+  'extruder', 'bed', 'adhesion', 'calibrate', 'firmware', 'sensor', 'stepper', 'belt', 'rail', 'frame', 'filament'
 ]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -67,18 +67,18 @@ const MIN_ACCURACY = 95
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function TypingGame({ currentUser, onTokensUpdated }) {
-  const [phase, setPhase]               = useState('idle')
-  const [fullText, setFullText]         = useState(() => generateText())
-  const [typed, setTyped]               = useState('')
-  const [timeLeft, setTimeLeft]         = useState(GAME_DURATION)
+  const [phase, setPhase] = useState('idle')
+  const [fullText, setFullText] = useState(() => generateText())
+  const [typed, setTyped] = useState('')
+  const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
   const [tokensEarned, setTokensEarned] = useState(() => getDailyTypingTokens())
-  const [awarding, setAwarding]         = useState(false)
-  const [lastResult, setLastResult]     = useState(null)
+  const [awarding, setAwarding] = useState(false)
+  const [lastResult, setLastResult] = useState(null)
 
   // Refs that always hold the latest values — safe to read inside intervals
-  const inputRef    = useRef(null)
-  const timerRef    = useRef(null)
-  const typedRef    = useRef('')
+  const inputRef = useRef(null)
+  const timerRef = useRef(null)
+  const typedRef = useRef('')
   const fullTextRef = useRef(fullText)
   const awardingRef = useRef(false)
 
@@ -199,9 +199,9 @@ export default function TypingGame({ currentUser, onTokensUpdated }) {
   }, [])
 
   // ── Derived values for render ──────────────────────────────────────────────
-  const dailyMax       = tokensEarned >= MAX_DAILY_TOKENS
+  const dailyMax = tokensEarned >= MAX_DAILY_TOKENS
   const elapsedSeconds = GAME_DURATION - timeLeft
-  const chars          = fullText.split('')
+  const chars = fullText.split('')
 
   // Live WPM / accuracy during game
   let liveWPM = 0, liveAccuracy = 100
