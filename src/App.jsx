@@ -117,7 +117,7 @@ function App() {
         setRaffleWinnerId(wId)
         setSelectedWinnerId(wId || '')
       }
-      
+
       const colors = cData.find(c => c.key === 'available_colors')
       if (colors) setAvailableColors(JSON.parse(colors.value))
 
@@ -490,8 +490,8 @@ function App() {
 
       {/* TAB NAV */}
       <nav className="tab-nav">
-        {[['home','🏠 Home'],['print','🖨️ Print Shop'],['trade','🔄 Trades'],['games','🎮 Games']].map(([tab,label]) => (
-          <button key={tab} className={`tab-btn ${activeTab===tab?'tab-active':''}`} onClick={()=>setActiveTab(tab)}>{label}</button>
+        {[['home', '🏠 Home'], ['print', '🖨️ Print Shop'], ['trade', '🔄 Trades'], ['games', '🎮 Games']].map(([tab, label]) => (
+          <button key={tab} className={`tab-btn ${activeTab === tab ? 'tab-active' : ''}`} onClick={() => setActiveTab(tab)}>{label}</button>
         ))}
       </nav>
 
@@ -545,7 +545,7 @@ function App() {
                     <span key={c} className="color-tag">{c} <button onClick={() => handleRemoveColor(c, 'regular')}>×</button></span>
                   ))}
                 </div>
-                
+
                 <h3 className="mt-1">Premium Colors (5 PT):</h3>
                 <div className="color-editor">
                   <input type="text" placeholder="Premium..." value={newPremiumColor} onChange={e => setNewPremiumColor(e.target.value)} />
@@ -565,16 +565,16 @@ function App() {
         {activeTab === 'print' && <div className="card mt-2 print-shop-card">
           <h2>🖨️ 3D Print Shop</h2>
           <p className="section-subtitle">Request a custom 3D print using club filament.</p>
-          
+
           <form className="print-form" onSubmit={handleCreatePrintRequest}>
             <div className="print-form-grid">
               <div className="form-group">
                 <label>What do you want printed?</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. A small dragon, phone stand, etc." 
-                  value={wanting} 
-                  onChange={e => setWanting(e.target.value)} 
+                <input
+                  type="text"
+                  placeholder="e.g. A small dragon, phone stand, etc."
+                  value={wanting}
+                  onChange={e => setWanting(e.target.value)}
                 />
               </div>
               <div className="form-group">
@@ -589,11 +589,11 @@ function App() {
           </form>
 
           <hr className="shop-divider" />
-          
+
           <div className="shop-section">
             <h3>🛒 PearToken Shop</h3>
             <p className="shop-info">Use your tokens to get perks!</p>
-            
+
             <div className="shop-grid">
               {/* Priority Print */}
               <div className="shop-item">
@@ -698,45 +698,45 @@ function App() {
                         </>
                       )}
 
-                    {trade.status === 'declined' && trade.decline_reason && (
-                      <div className="feedback-box">
-                        <strong>Founder Feedback:</strong> {trade.decline_reason}
-                      </div>
-                    )}
-                  </div>
+                      {trade.status === 'declined' && trade.decline_reason && (
+                        <div className="feedback-box">
+                          <strong>Founder Feedback:</strong> {trade.decline_reason}
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="trade-actions">
-                    <span className={`status-badge status-${trade.status}`}>{trade.status.toUpperCase()}</span>
+                    <div className="trade-actions">
+                      <span className={`status-badge status-${trade.status}`}>{trade.status.toUpperCase()}</span>
 
-                    {currentUser?.name === 'Zach' && trade.status === 'pending' && (
-                      <div className="admin-controls">
-                        {decliningId === trade.id ? (
-                          <div className="decline-prompt">
-                            <input 
-                              type="text" 
-                              placeholder="Why are you declining?" 
-                              value={tempDeclineReason} 
-                              onChange={e => setTempDeclineReason(e.target.value)}
-                              autoFocus 
-                            />
-                            <div className="prompt-buttons">
-                              <button onClick={() => handleUpdateStatus(trade, 'declined', tempDeclineReason)}>Confirm </button>
-                              <button className="btn-cancel" onClick={() => { setDecliningId(null); setTempDeclineReason(''); }}>×</button>
+                      {currentUser?.name === 'Zach' && trade.status === 'pending' && (
+                        <div className="admin-controls">
+                          {decliningId === trade.id ? (
+                            <div className="decline-prompt">
+                              <input
+                                type="text"
+                                placeholder="Why are you declining?"
+                                value={tempDeclineReason}
+                                onChange={e => setTempDeclineReason(e.target.value)}
+                                autoFocus
+                              />
+                              <div className="prompt-buttons">
+                                <button onClick={() => handleUpdateStatus(trade, 'declined', tempDeclineReason)}>Confirm </button>
+                                <button className="btn-cancel" onClick={() => { setDecliningId(null); setTempDeclineReason(''); }}>×</button>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <>
-                            <button className="btn-accept" onClick={() => handleUpdateStatus(trade, 'accepted')}>Accept</button>
-                            <button className="btn-decline" onClick={() => setDecliningId(trade.id)}>Decline</button>
-                          </>
-                        )}
-                      </div>
-                    )}
+                          ) : (
+                            <>
+                              <button className="btn-accept" onClick={() => handleUpdateStatus(trade, 'accepted')}>Accept</button>
+                              <button className="btn-decline" onClick={() => setDecliningId(trade.id)}>Decline</button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })
-          )}
+                )
+              })
+            )}
           </div>
         </div>}
 
@@ -755,8 +755,8 @@ function App() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <strong>{member.name}</strong>
                       {currentUser?.name === 'Zach' && member.name !== 'Zach' && (
-                        <button 
-                          className="btn-kick" 
+                        <button
+                          className="btn-kick"
                           onClick={() => handleKickMember(member.id)}
                           title="Kick member"
                         >
