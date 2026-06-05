@@ -669,28 +669,34 @@ function App() {
             {trades.length === 0 ? (
               <p>No requests yet.</p>
             ) : (
-              trades.map(trade => (
-                <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''} ${trade.request_type === 'raffle' ? 'raffle-request' : ''} ${trade.request_type === 'print' ? 'print-request' : ''}`}>
-                  <div className="trade-details">
-                    {trade.request_type === 'signup' ? (
-                      <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join</span>
-                    ) : trade.request_type === 'raffle' ? (
-                      <>
-                        <span className="trade-author"><span className="badge-raffle">🎁 RAFFLE</span> <strong>{trade.requester_name}</strong> claimed their prize:</span>
-                        <div className="prize-content">{trade.wanting}</div>
-                      </>
-                    ) : trade.request_type === 'print' ? (
-                      <>
-                        <span className="trade-author"><span className="badge-print">🖨️ PRINT</span> <strong>{trade.requester_name}</strong> requested a print:</span>
-                        <div className="prize-content">{trade.wanting}</div>
-                      </>
-                    ) : (
-                      <>
-                        <span className="trade-author"><strong>{trade.requester_name}</strong> proposed a trade:</span>
-                        <div><span className="badge-offer">Offering:</span> {trade.offering}</div>
-                        <div className="mt-1"><span className="badge-want">In Exchange For:</span> {trade.wanting}</div>
-                      </>
-                    )}
+              trades.map(trade => {
+                const isPriority = trade.request_type === 'print' && trade.offering && trade.offering.includes('PRIORITY');
+                return (
+                  <div key={trade.id} className={`trade-item ${trade.request_type === 'signup' ? 'signup-request' : ''} ${trade.request_type === 'raffle' ? 'raffle-request' : ''} ${trade.request_type === 'print' ? 'print-request' : ''} ${isPriority ? 'priority-request' : ''}`}>
+                    <div className="trade-details">
+                      {trade.request_type === 'signup' ? (
+                        <span className="trade-author"><span className="badge-signup">🆕 SIGNUP</span> <strong>{trade.requester_name}</strong> wants to join</span>
+                      ) : trade.request_type === 'raffle' ? (
+                        <>
+                          <span className="trade-author"><span className="badge-raffle">🎁 RAFFLE</span> <strong>{trade.requester_name}</strong> claimed their prize:</span>
+                          <div className="prize-content">{trade.wanting}</div>
+                        </>
+                      ) : trade.request_type === 'print' ? (
+                        <>
+                          <span className="trade-author">
+                            <span className="badge-print">🖨️ PRINT</span>
+                            {isPriority && <span className="badge-priority">🚀 PRIORITY</span>}
+                            <strong>{trade.requester_name}</strong> requested a print:
+                          </span>
+                          <div className="prize-content">{trade.wanting}</div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="trade-author"><strong>{trade.requester_name}</strong> proposed a trade:</span>
+                          <div><span className="badge-offer">Offering:</span> {trade.offering}</div>
+                          <div className="mt-1"><span className="badge-want">In Exchange For:</span> {trade.wanting}</div>
+                        </>
+                      )}
 
                     {trade.status === 'declined' && trade.decline_reason && (
                       <div className="feedback-box">
@@ -728,7 +734,7 @@ function App() {
                     )}
                   </div>
                 </div>
-              ))
+              })
             )}
           </div>
         </div>}

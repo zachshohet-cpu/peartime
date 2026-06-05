@@ -893,3 +893,31 @@ body {
   color: white;
   border-color: #d63031;
 }
+
+/* Priority Request Tags and Cards */
+.badge-priority {
+  background: linear-gradient(135deg, #e63946 0%, #ff4d6d 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(230, 57, 70, 0.2);
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  animation: pulse-priority 2s infinite;
+}
+
+.priority-request {
+  border-left: 6px solid #e63946 !important;
+  background: linear-gradient(145deg, #ffffff, #fff5f5) !important;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.08) !important;
+}
+
+@keyframes pulse-priority {
+  0% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(230, 57, 70, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+}
