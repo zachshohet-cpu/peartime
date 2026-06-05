@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react' // v1.2 games
+import React, { useEffect, useState } from 'react' // v1.3 typing game
 import { supabase } from './supabase'
 import PearClicker from './PearClicker'
+import TypingGame from './TypingGame'
 import './index.css'
 
 function App() {
@@ -513,6 +514,11 @@ function App() {
             <h2>🎮 Games Hub</h2>
             <p className="section-subtitle">Play games to earn PearTokens. More games coming soon!</p>
             <PearClicker
+              currentUser={currentUser}
+              onTokensUpdated={(updated) => setCurrentUser(updated)}
+            />
+            <hr className="games-divider" />
+            <TypingGame
               currentUser={currentUser}
               onTokensUpdated={(updated) => setCurrentUser(updated)}
             />
